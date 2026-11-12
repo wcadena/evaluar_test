@@ -1,3 +1,8 @@
+import { faker } from '@faker-js/faker';
+
+const generarCelularEcuador = () => {
+  return `099${faker.string.numeric(7)}`;
+};
 
 describe('Formulario de autorregistro Evaluar', () => {
 
@@ -10,7 +15,13 @@ describe('Formulario de autorregistro Evaluar', () => {
     cy.visit(ruta);
   });
 
-  it('Debe mostrar los campos y mantener Ingresar deshabilitado sin datos', () => {
+  it('Debe completar y enviar el autorregistro con datos Faker', () => {
+    const datos = {
+      firstName: faker.person.firstName(),
+      lastName: faker.person.lastName(),
+      email: faker.internet.email({ provider: 'example.com' }).toLowerCase(),
+      phoneNumber: generarCelularEcuador(),
+    };
 
     // Esperar el recurso solicitado por la página
     cy.wait('@loginBasic', { timeout: 30000 });
@@ -45,9 +56,41 @@ describe('Formulario de autorregistro Evaluar', () => {
           .should('have.text', 'Ingresar')
           .and('be.visible')
           .and('be.disabled');
+
+        Object.entries(datos).forEach(([name, value]) => {
+          cy.get(`input[name="${name}"]`)
+            .type(value)
+            .should('have.value', value);
+        });
+
+        // Los select nativos están ocultos por los combobox de la interfaz.
+        // CO y su prefijo +57 están presentes en el HTML proporcionado.
+        // Seleccionar Ecuador como país de residencia
+        cy.get('select').eq(0)
+          .select('EC', { force: true })
+          .should('have.value', 'EC');
+
+        // Seleccionar Ecuador como prefijo telefónico
+        cy.get('select').eq(1)
+          .select('EC', { force: true })
+          .should('have.value', 'EC');
+
+        // Verificar que el prefijo telefónico sea +593
+        cy.contains('button[role="combobox"]', '+593')
+          .should('be.visible');
+
+        cy.get('button[role="checkbox"]').click();
+        cy.get('button[role="checkbox"]')
+          .should('have.attr', 'aria-checked', 'true');
+
+        cy.get('button[type="submit"]').should('be.enabled');
       });
 
-    cy.screenshot('01-formulario-autorregistro');
+    cy.screenshot('01-formulario-faker-completo');
+
+    cy.get('form').filter(':visible').find('button[type="submit"]').click();
+
+    // Pendiente: comprobar el resultado real cuando conozcamos la siguiente pantalla.
 
   });
 
