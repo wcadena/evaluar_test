@@ -13,6 +13,7 @@ yarn-error.log*
 .env
 .env.*
 !.env.example
+cypress.env.json
 
 # ==========================================
 # CYPRESS
@@ -31,6 +32,7 @@ cypress/downloads/
 .cache/
 .cypress-cache/
 
+
 # ==========================================
 # REPORTES DE PRUEBAS
 # ==========================================
@@ -41,6 +43,7 @@ mochawesome-report/
 mochawesome.json
 test-results/
 reports/
+entrega/
 
 # ==========================================
 # IDE Y EDITORES
