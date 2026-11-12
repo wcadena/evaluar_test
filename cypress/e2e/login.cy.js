@@ -133,7 +133,7 @@ describe('Formulario de autorregistro Evaluar', () => {
     });
   });
 
-  it('Debe recibir la respuesta del proceso y navegar al área del proceso', () => {
+  it('Debe acceder al proceso y mostrar Evaluaciones, Personalidad y Teletrabajo', () => {
     completarYEnviarFormulario();
 
     cy.wait('@autorregistro', { timeout: 60000, log: false })
@@ -152,7 +152,16 @@ describe('Formulario de autorregistro Evaluar', () => {
     cy.getCookie('auth-realm', { log: false })
       .should('have.property', 'value', 'evbasic');
 
-    cy.screenshot('02-acceso-al-proceso');
+    // El título Evaluaciones tiene versiones de escritorio y móvil.
+    ['Evaluaciones', 'Personalidad', 'Teletrabajo'].forEach((texto) => {
+      cy.get('span', { timeout: 30000 })
+        .filter((_, elemento) => elemento.textContent.trim() === texto)
+        .filter(':visible')
+        .should('have.length.at.least', 1)
+        .and('be.visible');
+    });
+
+    cy.screenshot('02-evaluaciones-personalidad-teletrabajo');
   });
 
 });
