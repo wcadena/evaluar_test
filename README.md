@@ -61,3 +61,34 @@ Comprueba `passing` en la salida de Cypress. No publiques evidencia con datos
 personales. La implementación se verificó estáticamente; aún no se ha confirmado
 una ejecución E2E exitosa en este entorno. No se ejecutaron nuevos registros
 para implementar esta mejora.
+
+## TC-002: evaluación matricial
+
+```powershell
+npx cypress run --spec "cypress/e2e/02-prueba-matricial.cy.js" --browser chrome
+```
+
+La prueba crea un candidato nuevo con `crearSesionNuevaPorApi()`; no necesita
+ejecutar login previamente. Este helper se extrajo de la prueba API existente
+sin cambiar sus datos Faker, petición, cookies o almacenamiento OIDC.
+
+La evaluación identificada en el DOM es **Personalidad**: ocho preguntas con
+cinco filas y cinco posiciones (Primero a Quinto). Se elige una posición libre
+por fila según el orden visual, de forma determinista; no se consideran
+respuestas correctas ni se intenta mejorar un resultado psicológico. Se validan
+las selecciones, la unicidad de posiciones y las respuestas del POST real
+`/evaluation-web/answers/matrix` antes de comprobar el cambio del contador.
+El total se obtiene del contador con un máximo de 30 preguntas.
+
+Al finalizar se exige HTTP 200 de la comprobación de evaluación y el mensaje
+real `You completed the test Personalidad`. El botón Finish se pulsa únicamente
+en el candidato nuevo de prueba y cuando está habilitado. No se inicia Teletrabajo.
+
+Las cuatro capturas `TC002-01-...` a `TC002-04-...` se guardan en
+`cypress/screenshots/02-prueba-matricial.cy.js/`; el video se genera en
+`cypress/videos/02-prueba-matricial.cy.js.mp4`. La pantalla de evaluación no
+incluye el correo del candidato. Los artefactos están excluidos de Git.
+
+Validación real de TC-002: Cypress 16.3.0 con Chrome 157 headless,
+**1 passing, 0 failing**, 64 segundos, código de salida 0. Se completaron las
+ocho matrices y se generaron las cuatro capturas y el video.
