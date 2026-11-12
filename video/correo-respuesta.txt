@@ -1,0 +1,18 @@
+Asunto: Entrega prueba técnica QA Automation — [NOMBRE COMPLETO]
+
+Hola,
+
+Comparto la solución de la prueba técnica implementada con Cypress y JavaScript:
+
+Repositorio público: [ENLACE DEL REPOSITORIO]
+Video funcional: [ENLACE PÚBLICO DEL VIDEO]
+
+La suite automatiza el login real del candidato, la evaluación matricial Personalidad y la evaluación de opción múltiple Teletrabajo. Se verificó desde una instalación limpia con npm ci y npm test: 3 escenarios aprobados, 0 fallidos y 0 omitidos.
+
+Las instrucciones de instalación, configuración y ejecución están en el README. El login controlado real utiliza correo o identificación, sin campo de contraseña.
+
+Nombre: [NOMBRE COMPLETO]
+Tecnología: Cypress + JavaScript
+
+Saludos,
+[NOMBRE COMPLETO]
