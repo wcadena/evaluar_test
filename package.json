@@ -163,7 +163,8 @@
     "test:login": "node scripts/ejecutar-suite.cjs login",
     "test:matriz": "node scripts/ejecutar-suite.cjs matriz",
     "test:multiple": "node scripts/ejecutar-suite.cjs multiple",
-    "cy:open": "cypress open --browser chrome"
+    "cy:open": "cypress open --browser chrome",
+    "video:entrega": "node scripts/preparar-video.cjs"
   },
   "keywords": [],
   "author": "",

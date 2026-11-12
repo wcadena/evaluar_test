@@ -10,7 +10,7 @@ instalado. Validado en Windows con Node 22.12, Cypress 16.3 y Chrome 157.
 Se necesita acceso a npm y a los dominios de Evaluar.
 
 ```powershell
-git clone <URL-PUBLICA-DEL-REPOSITORIO>
+git clone https://github.com/wcadena/evaluar_test
 cd test_evaluar
 npm ci
 npx cypress verify
@@ -105,6 +105,23 @@ abrirse sin iniciar sesión. Los videos de Cypress no graban el terminal;
 cualquier montaje debe identificar sus rótulos y usar la salida real guardada.
 No publiques información de candidatos reales.
 
+Para montar un video breve con las grabaciones y el resumen de la última
+ejecución real:
+
+```powershell
+npm run video:entrega
+```
+
+Genera `entrega/demo-evaluar.mp4`: clips reales a velocidad 2x, rótulos del comando
+ejecutado y resumen de resultados. Requiere FFmpeg: en Windows se busca el
+incluido en la caché de Cypress; también puedes indicar su ejecutable mediante
+`FFMPEG_PATH`. El script rechaza resultados distintos de tres escenarios aprobados.
+No vuelve a ejecutar pruebas ni registra candidatos.
+
+La verificación de entrega se realizó desde una copia limpia con `npm ci` y
+`npm test`: **3 passing, 0 failing, 0 omitidas**, código de salida 0, en 146.83 s.
+El resumen JSON y el log de esa ejecución acompañan el video local.
+
 ## Pruebas adicionales y límites
 
 `login.cy.js` conserva las pruebas originales del **autorregistro**;
@@ -116,7 +133,7 @@ el proceso. Por eso `npx cypress run` sin seleccionar archivos puede ejecutar
 pruebas adicionales que requieren esa preparación.
 
 Los tres escenarios de entrega usan candidatos nuevos y no tienen esa
- dependencia. Los selectores y textos corresponden al DOM real inspeccionado.
+dependencia. Los selectores y textos corresponden al DOM real inspeccionado.
 La ruta inglesa muestra `Evaluations`; también se admite `Evaluaciones`.
 Si la plataforma cambia sus controles o no habilita el envío, la prueba falla y
 debe revisarse la evidencia; no se omiten aserciones ni se fuerzan envíos.
@@ -124,6 +141,12 @@ debe revisarse la evidencia; no se omiten aserciones ni se fuerzan envíos.
 Hay peticiones secundarias de reportes/analítica que pueden fallar fuera del
 flujo probado. No se desactivan validaciones, CAPTCHA, MFA ni controles de seguridad.
 No hay endpoints, credenciales ni resultados de evaluación simulados.
+
+La instalación actual reporta una advertencia de `npm audit` en Faker 9.9,
+relacionada con `helpers.fake` (GHSA-qxc2-j82w-r537). La suite no utiliza esa
+función. No se aplicó `npm audit fix --force`, que cambiaría la versión mayor
+y los requisitos de Node sin validación. El lockfile mantiene la instalación
+con la que se verificó la entrega.
 
 ## Entrega
 
