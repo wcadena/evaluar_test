@@ -104,6 +104,9 @@ export const crearSesionNuevaPorApi = (processId) => {
       }],
     };
 
+    // Identificación ficticia para poder probar luego el formulario de login.
+    cy.wrap({ identification: datos.identification }, { log: false }).as('candidatoApi');
+
     cy.request({
       method: 'POST',
       url: `https://apis.evaluar.com/candidate/process/public/controlled/${processId}/people`,

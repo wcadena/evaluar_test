@@ -159,7 +159,11 @@
     "yauzl": "^3.4.0"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node scripts/ejecutar-suite.cjs",
+    "test:login": "node scripts/ejecutar-suite.cjs login",
+    "test:matriz": "node scripts/ejecutar-suite.cjs matriz",
+    "test:multiple": "node scripts/ejecutar-suite.cjs multiple",
+    "cy:open": "cypress open --browser chrome"
   },
   "keywords": [],
   "author": "",

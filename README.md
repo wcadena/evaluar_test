@@ -1,130 +1,133 @@
-# Sesión autenticada reutilizable
+# Evaluar — QA Automation E2E
 
-Las pruebas actuales de `login.cy.js` conservan su formulario, datos Faker y
-aserciones. Al indicar `sessionUser`, la última prueba guarda la sesión final
-establecida por la aplicación mediante `cy.session()`. No se utiliza el token
-del POST para fabricar cookies. El identificador combina dominio, proceso y
-el alias de cuenta `sessionUser`; usa un alias diferente para cada cuenta.
+Suite con **Cypress y JavaScript** para el proceso autorizado
+`572ff080-da01-4a64-9858-897f5a8d1be9` de candidato.evaluar.com.
 
-Para preparar y reutilizar la sesión en la misma ejecución, ejecuta los archivos
-en este orden (este comando ejecuta los autorregistros de las pruebas existentes):
+## Instalación
+
+Requisitos: Node.js 22.12 o compatible con Cypress 16, npm y Google Chrome
+instalado. Validado en Windows con Node 22.12, Cypress 16.3 y Chrome 157.
+Se necesita acceso a npm y a los dominios de Evaluar.
 
 ```powershell
-npx cypress run --spec "cypress/e2e/login.cy.js,cypress/e2e/acceso-autenticado.cy.js" --browser chrome --expose sessionUser=cuenta-qa
+git clone <URL-PUBLICA-DEL-REPOSITORIO>
+cd test_evaluar
+npm ci
+npx cypress verify
+npm test
 ```
 
-Para ejecutar únicamente el acceso:
+`npm test` ejecuta exclusivamente TC-001, TC-002 y TC-003, en ese orden,
+con Chrome headless. No requiere una sesión de otra ejecución ni pasos manuales
+en la plataforma. Cada escenario prepara un candidato ficticio nuevo mediante
+el autorregistro autorizado. La ejecución envía y finaliza sus evaluaciones.
+
+## Escenarios
+
+| Caso | Archivo | Validaciones |
+|---|---|---|
+| TC-001: login | `cypress/e2e/01-login.cy.js` | Cuenta previamente creada; eliminación de cookies y almacenamiento del registro; login por formulario con identificación válida; HTTP 200; token nuevo; cookies y área autenticada. |
+| TC-002: matriz | `cypress/e2e/02-prueba-matricial.cy.js` | Personalidad: 8 matrices, 5 filas y 5 posiciones; una posición diferente por fila; selección visual; payload y HTTP 200; avance y mensaje final real. |
+| TC-003: opción múltiple | `cypress/e2e/03-seleccion-multiple.cy.js` | Teletrabajo: 11 preguntas con tres alternativas de selección única; selección visual; payload y HTTP 200; avance, estado FINISHED y mensaje final real. |
+
+El login controlado de esta plataforma pide **correo o identificación**, sin
+campo de contraseña. TC-001 crea primero una cuenta de prueba por API y elimina
+su sesión; después inicia sesión desde la interfaz usando su identificación.
+El formulario realiza el login real de la cuenta existente. No se inventan
+credenciales ni se publica la identificación generada en código o fixtures.
+
+La preparación por API en TC-002 y TC-003 evita repetir el formulario de acceso.
+Las preguntas, selecciones, navegación y finalización se ejecutan en la interfaz.
+Las respuestas siguen una estrategia determinista para probar el funcionamiento,
+sin interpretar alternativas como correctas o buscar mejorar puntuaciones.
+
+## Ejecución por escenario
 
 ```powershell
-npx cypress run --spec "cypress/e2e/acceso-autenticado.cy.js" --browser chrome --expose sessionUser=cuenta-qa
+npm run test:login
+npm run test:matriz
+npm run test:multiple
 ```
 
-**Una nueva ejecución de ese segundo comando no dispone de la sesión anterior.**
-Fallará expresamente si no encuentra la sesión; no registra otra cuenta ni
-inventa un login. Todavía no se dispone de un mecanismo confirmado para
-reautenticar una cuenta existente. Cuando la sesión caduque o el servidor la
-rechace, hace falta autenticar de nuevo mediante un flujo autorizado; no hay
-renovación automática implementada.
-
-En modo interactivo:
+También se pueden ejecutar directamente:
 
 ```powershell
-npx cypress open --browser chrome --expose sessionUser=cuenta-qa
-```
-
-Ejecuta primero `login.cy.js` y luego `acceso-autenticado.cy.js`, sin cerrar
-Cypress ni limpiar las sesiones. `cacheAcrossSpecs` permite compartirlas dentro
-de esa ejecución en la misma máquina. No existe persistencia permanente.
-
-La captura inicial conserva las cookies reales y los almacenamientos local y de
-sesión del origen de la aplicación en memoria. Cypress almacena el contexto
-resultante en su caché de sesiones. No se escriben tokens en archivos, fixtures,
-variables de entorno ni logs propios. `sessionUser` es solo un alias sin secretos.
-
-Al final de la última prueba de `login.cy.js`, `guardarSesionActual()` también
-guarda un respaldo en memoria del proceso Node mediante `cy.task()`. Se comprueba
-la escritura con la aserción `sesión guardada en memoria`. Si la caché de
-`cy.session()` no existe, el setup restaura ese respaldo y vuelve a validar el
-acceso real. Reinicia Cypress después de cambiar `setupNodeEvents`; luego ejecuta
-login y acceso en la misma instancia. Cerrar o reiniciar el proceso elimina el
-respaldo. Restaurar un respaldo expirado no renueva la autenticación y hará
-fallar la validación.
-
-La validación visita el proceso, comprueba cookies y vigencia, acepta las rutas
-`/en/process/{id}` y `/process/{id}`, exige las tres secciones visibles y comprueba
-que el campo de nombre del autorregistro ya no exista. Una redirección al login,
-un error HTTP o contenido autenticado ausente hace fallar la validación.
-
-La evidencia de acceso se genera en
-`cypress/screenshots/acceso-autenticado.cy.js/03-acceso-sesion-reutilizada.png`.
-Comprueba `passing` en la salida de Cypress. No publiques evidencia con datos
-personales. La implementación se verificó estáticamente; aún no se ha confirmado
-una ejecución E2E exitosa en este entorno. No se ejecutaron nuevos registros
-para implementar esta mejora.
-
-## TC-002: evaluación matricial
-
-```powershell
+npx cypress run --spec "cypress/e2e/01-login.cy.js" --browser chrome
 npx cypress run --spec "cypress/e2e/02-prueba-matricial.cy.js" --browser chrome
-```
-
-La prueba crea un candidato nuevo con `crearSesionNuevaPorApi()`; no necesita
-ejecutar login previamente. Este helper se extrajo de la prueba API existente
-sin cambiar sus datos Faker, petición, cookies o almacenamiento OIDC.
-
-La evaluación identificada en el DOM es **Personalidad**: ocho preguntas con
-cinco filas y cinco posiciones (Primero a Quinto). Se elige una posición libre
-por fila según el orden visual, de forma determinista; no se consideran
-respuestas correctas ni se intenta mejorar un resultado psicológico. Se validan
-las selecciones, la unicidad de posiciones y las respuestas del POST real
-`/evaluation-web/answers/matrix` antes de comprobar el cambio del contador.
-El total se obtiene del contador con un máximo de 30 preguntas.
-
-Al finalizar se exige HTTP 200 de la comprobación de evaluación y el mensaje
-real `You completed the test Personalidad`. El botón Finish se pulsa únicamente
-en el candidato nuevo de prueba y cuando está habilitado. No se inicia Teletrabajo.
-
-Las cuatro capturas `TC002-01-...` a `TC002-04-...` se guardan en
-`cypress/screenshots/02-prueba-matricial.cy.js/`; el video se genera en
-`cypress/videos/02-prueba-matricial.cy.js.mp4`. La pantalla de evaluación no
-incluye el correo del candidato. Los artefactos están excluidos de Git.
-
-Validación real de TC-002: Cypress 16.3.0 con Chrome 157 headless,
-**1 passing, 0 failing**, 64 segundos, código de salida 0. Se completaron las
-ocho matrices y se generaron las cuatro capturas y el video.
-
-## TC-003: opción múltiple Teletrabajo
-
-```powershell
 npx cypress run --spec "cypress/e2e/03-seleccion-multiple.cy.js" --browser chrome
 ```
 
-Reutiliza `crearSesionNuevaPorApi()` para crear un candidato nuevo por prueba,
-sin necesitar login previo. No modifica los escenarios anteriores.
+Modo interactivo:
 
-La inspección real confirmó que **Teletrabajo** tiene 11 preguntas de opción
-múltiple, cada una con tres alternativas y selección única mediante radios.
-Se conserva una selección existente o se elige la primera opción habilitada;
-no se consideran respuestas correctas ni se busca mejorar la puntuación.
-Si el tipo de controles cambia, la prueba falla en lugar de suponer reglas
-desconocidas para casillas, mínimos o máximos de selección.
+```powershell
+npm run cy:open
+```
 
-Se valida una opción marcada, el POST real
-`https://apis.evaluar.com/evaluation-web/answers` con `answerType: SINGLE`,
-el identificador de pregunta, la evaluación y la alternativa seleccionada.
-Cada avance requiere HTTP 200 y un cambio del contador y de las opciones.
-El recorrido tiene un límite de 30 preguntas y no usa esperas fijas.
+Selecciona E2E, Chrome y uno de los tres archivos numerados. No necesitas
+ejecutar otro archivo antes. Los scripts headless eliminan del proceso hijo
+`ELECTRON_RUN_AS_NODE` y `ELECTRON_NO_ATTACH_CONSOLE`, que algunos editores
+inyectan y que impiden iniciar Cypress correctamente.
 
-Al terminar, el GET real `/evaluation-web/evaluations/{id}/check` debe devolver
-HTTP 200 y `data.status.Name: FINISHED` para la misma evaluación. También se
-exigen el mensaje `You completed the test Teletrabajo` y la ausencia de controles
-de preguntas activas. Finish solo se pulsa habilitado en el candidato de prueba.
+## Configuración y seguridad
 
-Las cuatro capturas `TC003-01-...` a `TC003-04-...` se generan en
-`cypress/screenshots/03-seleccion-multiple.cy.js/`; el video está en
-`cypress/videos/03-seleccion-multiple.cy.js.mp4`. No se guardan tokens en archivos
-y las evidencias de la evaluación no incluyen el correo del candidato.
+`baseUrl`, viewport y tiempos están en `cypress.config.js`. Los escenarios de
+entrega no requieren usuarios, contraseñas ni tokens de configuración; Faker
+genera los datos y el helper utiliza los tokens devueltos por la API.
+No hay variables secretas obligatorias ni archivos locales ocultos que preparar.
 
-Validación real de TC-003: Cypress 16.3.0 y Chrome 157 headless,
-**1 passing, 0 failing**, 42 segundos, código de salida 0. Se respondieron las
-11 preguntas, se confirmó `FINISHED` y se generaron cuatro capturas y el video.
+El alias público `expose.sessionUser=cuenta-qa` se usa únicamente en las pruebas
+adicionales de restauración de sesión. Puede cambiarse con
+`--expose sessionUser=otro-alias`; no representa una credencial.
+En Cypress 16, cualquier secreto futuro debe leerse con `cy.env()` y mantenerse
+fuera de Git. `.env*`, `cypress.env.json`, reportes, videos, capturas y artefactos
+de inspección están excluidos mediante `.gitignore`.
+
+## Evidencias y resultado esperado
+
+Al terminar `npm test` se esperan **3 passing, 0 failing**, código de salida 0
+y ningún escenario omitido. El runner falla también si quedan pruebas pendientes.
+
+- `reports/resultado-suite.json`: resumen de la ejecución real sin tokens.
+- `cypress/screenshots/<archivo>/`: capturas TC001, TC002 y TC003.
+- `cypress/videos/<archivo>.mp4`: video real de cada escenario.
+- `entrega/`: paquete local de evidencias para publicar aparte del código.
+
+Para conservar también la salida de terminal en PowerShell:
+
+```powershell
+New-Item -ItemType Directory -Force reports
+npm test 2>&1 | Tee-Object -FilePath reports/ejecucion.log
+```
+
+El video de entrega debe mostrar el comando y los resultados reales de los
+tres escenarios. Revisa su contenido y comparte un enlace público que pueda
+abrirse sin iniciar sesión. Los videos de Cypress no graban el terminal;
+cualquier montaje debe identificar sus rótulos y usar la salida real guardada.
+No publiques información de candidatos reales.
+
+## Pruebas adicionales y límites
+
+`login.cy.js` conserva las pruebas originales del **autorregistro**;
+`acceso-autenticado.cy.js` conserva las pruebas de reutilización de sesión y de
+acceso por API. No sustituyen TC-001 ni forman parte de `npm test`.
+La prueba adicional de sesión requiere ejecutar primero el autorregistro en
+la misma instancia de Cypress; su respaldo vive en memoria y se pierde al cerrar
+el proceso. Por eso `npx cypress run` sin seleccionar archivos puede ejecutar
+pruebas adicionales que requieren esa preparación.
+
+Los tres escenarios de entrega usan candidatos nuevos y no tienen esa
+ dependencia. Los selectores y textos corresponden al DOM real inspeccionado.
+La ruta inglesa muestra `Evaluations`; también se admite `Evaluaciones`.
+Si la plataforma cambia sus controles o no habilita el envío, la prueba falla y
+debe revisarse la evidencia; no se omiten aserciones ni se fuerzan envíos.
+
+Hay peticiones secundarias de reportes/analítica que pueden fallar fuera del
+flujo probado. No se desactivan validaciones, CAPTCHA, MFA ni controles de seguridad.
+No hay endpoints, credenciales ni resultados de evaluación simulados.
+
+## Entrega
+
+Publica el código, configuración, lockfile y este README en GitHub. Comparte
+aparte el video y verifica ambos enlaces en una ventana sin sesión. El correo
+de respuesta debe indicar nombre completo, Cypress + JavaScript, enlace del
+repositorio y enlace del video. No incluyas tokens ni archivos de sesión.
