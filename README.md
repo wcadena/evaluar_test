@@ -92,3 +92,39 @@ incluye el correo del candidato. Los artefactos están excluidos de Git.
 Validación real de TC-002: Cypress 16.3.0 con Chrome 157 headless,
 **1 passing, 0 failing**, 64 segundos, código de salida 0. Se completaron las
 ocho matrices y se generaron las cuatro capturas y el video.
+
+## TC-003: opción múltiple Teletrabajo
+
+```powershell
+npx cypress run --spec "cypress/e2e/03-seleccion-multiple.cy.js" --browser chrome
+```
+
+Reutiliza `crearSesionNuevaPorApi()` para crear un candidato nuevo por prueba,
+sin necesitar login previo. No modifica los escenarios anteriores.
+
+La inspección real confirmó que **Teletrabajo** tiene 11 preguntas de opción
+múltiple, cada una con tres alternativas y selección única mediante radios.
+Se conserva una selección existente o se elige la primera opción habilitada;
+no se consideran respuestas correctas ni se busca mejorar la puntuación.
+Si el tipo de controles cambia, la prueba falla en lugar de suponer reglas
+desconocidas para casillas, mínimos o máximos de selección.
+
+Se valida una opción marcada, el POST real
+`https://apis.evaluar.com/evaluation-web/answers` con `answerType: SINGLE`,
+el identificador de pregunta, la evaluación y la alternativa seleccionada.
+Cada avance requiere HTTP 200 y un cambio del contador y de las opciones.
+El recorrido tiene un límite de 30 preguntas y no usa esperas fijas.
+
+Al terminar, el GET real `/evaluation-web/evaluations/{id}/check` debe devolver
+HTTP 200 y `data.status.Name: FINISHED` para la misma evaluación. También se
+exigen el mensaje `You completed the test Teletrabajo` y la ausencia de controles
+de preguntas activas. Finish solo se pulsa habilitado en el candidato de prueba.
+
+Las cuatro capturas `TC003-01-...` a `TC003-04-...` se generan en
+`cypress/screenshots/03-seleccion-multiple.cy.js/`; el video está en
+`cypress/videos/03-seleccion-multiple.cy.js.mp4`. No se guardan tokens en archivos
+y las evidencias de la evaluación no incluyen el correo del candidato.
+
+Validación real de TC-003: Cypress 16.3.0 y Chrome 157 headless,
+**1 passing, 0 failing**, 42 segundos, código de salida 0. Se respondieron las
+11 preguntas, se confirmó `FINISHED` y se generaron cuatro capturas y el video.
