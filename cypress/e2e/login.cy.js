@@ -1,51 +1,24 @@
 
-describe('Pruebas de Login - The Internet', () => {
-  const url = 'https://the-internet.herokuapp.com/login';
+describe('TC-001 - Autenticación Evaluar', () => {
 
-  beforeEach(() => {
-    cy.visit(url);
+  const ruta = '/auth/autoregister/controlled/572ff080-da01-4a64-9858-897f5a8d1be9';
+
+  it('Debe cargar la aplicación correctamente', () => {
+
+    cy.intercept('GET', '**/auth/login/controlled/basic*').as('loginBasic');
+
+    cy.visit(ruta);
+
+    // Verificar que se cargó el documento
+    cy.document().its('readyState')
+      .should('eq', 'complete');
+
+    // Esperar a que termine de cargar el recurso de login
+    cy.wait('@loginBasic', { timeout: 30000 });
+
+    // Obtener evidencia
+    cy.screenshot('01-pantalla-inicial');
+
   });
 
-  it('TC-001: Login exitoso', () => {
-    cy.get('#username').type('tomsmith');
-    cy.get('#password').type('SuperSecretPassword!');
-    cy.get('button[type="submit"]').click();
-
-    cy.url().should('include', '/secure');
-    cy.get('#flash')
-      .should('contain.text', 'You logged into a secure area!');
-    cy.get('a[href="/logout"]').should('be.visible');
-  });
-
-  it('TC-002: Contraseña incorrecta', () => {
-    cy.get('#username').type('tomsmith');
-    cy.get('#password').type('passwordIncorrecta');
-    cy.get('button[type="submit"]').click();
-
-    cy.get('#flash')
-      .should('contain.text', 'Your password is invalid!');
-  });
-
-  it('TC-003: Usuario incorrecto', () => {
-    cy.get('#username').type('usuarioIncorrecto');
-    cy.get('#password').type('SuperSecretPassword!');
-    cy.get('button[type="submit"]').click();
-
-    cy.get('#flash')
-      .should('contain.text', 'Your username is invalid!');
-  });
-
-  it('TC-004: Cerrar sesión', () => {
-    cy.get('#username').type('tomsmith');
-    cy.get('#password').type('SuperSecretPassword!');
-    cy.get('button[type="submit"]').click();
-
-    cy.url().should('include', '/secure');
-
-    cy.get('a[href="/logout"]').click();
-
-    cy.url().should('include', '/login');
-    cy.get('#flash')
-      .should('contain.text', 'You logged out of the secure area!');
-  });
 });

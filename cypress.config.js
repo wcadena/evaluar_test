@@ -1,9 +1,13 @@
-const { defineConfig } = require("cypress");
+
+const { defineConfig } = require('cypress');
 
 module.exports = defineConfig({
   e2e: {
-    setupNodeEvents(on, config) {
-      // implement node event listeners here
-    },
+    baseUrl: 'https://candidato.evaluar.com',
+    viewportWidth: 1366,
+    viewportHeight: 768,
+    defaultCommandTimeout: 10000,
+    pageLoadTimeout: 60000,
+    video: true,
   },
 });
