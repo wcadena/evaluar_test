@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker';
+import { guardarSesionActual } from '../support/sesion-evaluar';
 
 const generarCelularEcuador = () => {
   return `099${faker.string.numeric(7)}`;
@@ -162,6 +163,7 @@ describe('Formulario de autorregistro Evaluar', () => {
     });
 
     cy.screenshot('02-evaluaciones-personalidad-teletrabajo');
+    guardarSesionActual(processId);
   });
 
 });

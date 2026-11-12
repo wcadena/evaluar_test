@@ -2,6 +2,9 @@
 const { defineConfig } = require('cypress');
 
 module.exports = defineConfig({
+  expose: {
+    sessionUser: 'cuenta-qa',
+  },
   e2e: {
     baseUrl: 'https://candidato.evaluar.com',
     viewportWidth: 1366,
