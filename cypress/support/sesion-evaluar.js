@@ -5,14 +5,16 @@ export const verificarAreaAutenticada = (processId) => {
     .should('match', new RegExp(`^/(en/)?process/${processId}/?$`));
   // Reconsultar el DOM en cada intento mientras React renderiza el contenido.
   cy.get('body', { timeout: 30000 }).should(($body) => {
-    ['Evaluaciones', 'Personalidad', 'Teletrabajo'].forEach((texto) => {
+    [['Evaluaciones', 'Evaluations'], ['Personalidad'], ['Teletrabajo']].forEach((textos) => {
       const coincidencias = $body.find('span').filter((_, elemento) =>
-        elemento.textContent.replace(/\s+/g, ' ').trim() === texto
+        textos.includes(elemento.textContent.replace(/\s+/g, ' ').trim())
       ).filter(':visible');
-      expect(coincidencias.length, `sección visible: ${texto}`).to.be.greaterThan(0);
+      expect(coincidencias.length, `sección visible: ${textos.join(' / ')}`).to.be.greaterThan(0);
     });
   });
   cy.get('input[name="firstName"]').should('not.exist');
+  // Comprobar la ruta también después del renderizado y posibles redirecciones.
+  cy.location('pathname').should('match', new RegExp(`^/(en/)?process/${processId}/?$`));
 };
 
 const verificarCookies = () => {
