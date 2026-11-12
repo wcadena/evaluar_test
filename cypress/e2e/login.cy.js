@@ -6,22 +6,34 @@ const generarCelularEcuador = () => {
 
 describe('Formulario de autorregistro Evaluar', () => {
 
-  const ruta = '/auth/autoregister/controlled/572ff080-da01-4a64-9858-897f5a8d1be9';
+  const processId = '572ff080-da01-4a64-9858-897f5a8d1be9';
+  const ruta = `/auth/autoregister/controlled/${processId}`;
 
   beforeEach(() => {
 
     cy.intercept('GET', '**/auth/login/controlled/basic*').as('loginBasic');
+    cy.intercept({
+      method: 'POST',
+      hostname: 'apis.evaluar.com',
+      pathname: `/candidate/process/public/controlled/${processId}/people`,
+    }).as('autorregistro');
+    cy.intercept({
+      method: 'GET',
+      hostname: 'candidato.evaluar.com',
+      pathname: `/process/${processId}`,
+    }).as('proceso');
 
     cy.visit(ruta);
   });
 
-  it('Debe completar y enviar el autorregistro con datos Faker', () => {
+  const completarYEnviarFormulario = () => {
     const datos = {
       firstName: faker.person.firstName(),
       lastName: faker.person.lastName(),
       email: faker.internet.email({ provider: 'example.com' }).toLowerCase(),
       phoneNumber: generarCelularEcuador(),
     };
+    cy.wrap(datos, { log: false }).as('datosRegistro');
 
     // Esperar el recurso solicitado por la página
     cy.wait('@loginBasic', { timeout: 30000 });
@@ -64,7 +76,6 @@ describe('Formulario de autorregistro Evaluar', () => {
         });
 
         // Los select nativos están ocultos por los combobox de la interfaz.
-        // CO y su prefijo +57 están presentes en el HTML proporcionado.
         // Seleccionar Ecuador como país de residencia
         cy.get('select').eq(0)
           .select('EC', { force: true })
@@ -90,8 +101,58 @@ describe('Formulario de autorregistro Evaluar', () => {
 
     cy.get('form').filter(':visible').find('button[type="submit"]').click();
 
-    // Pendiente: comprobar el resultado real cuando conozcamos la siguiente pantalla.
+  };
 
+  it('Debe responder 200 y entregar tokens al enviar el autorregistro', () => {
+    completarYEnviarFormulario();
+
+    cy.get('@datosRegistro').then((datos) => {
+      cy.wait('@autorregistro', { timeout: 60000, log: false }).then(({ request, response }) => {
+        cy.wrap(request.body, { log: false }).should('include', {
+          identification: datos.email,
+          firstName: datos.firstName,
+          lastName: datos.lastName,
+          country: 'EC',
+          autoRegisterType: 'EMAIL',
+          phoneNumber: `+593${datos.phoneNumber}`,
+        });
+        cy.wrap(response?.statusCode).should('eq', 200);
+
+        const token = response?.body?.data?.token;
+        // Validar presencia y formato sin mostrar los secretos en las aserciones.
+        cy.wrap(Boolean(token), { log: false }).should('eq', true);
+        ['access_token', 'refresh_token'].forEach((campo) => {
+          const valor = token?.[campo];
+          cy.wrap(typeof valor === 'string' && valor.length > 0, { log: false })
+            .should('eq', true);
+        });
+        cy.wrap(token?.token_type).should('match', /^bearer$/i);
+        cy.wrap(token?.expires_in).should('be.a', 'number').and('be.gt', 0);
+        cy.wrap(token?.refresh_expires_in).should('be.a', 'number').and('be.gt', 0);
+      });
+    });
+  });
+
+  it('Debe recibir la respuesta del proceso y navegar al área del proceso', () => {
+    completarYEnviarFormulario();
+
+    cy.wait('@autorregistro', { timeout: 60000, log: false })
+      .its('response.statusCode').should('eq', 200);
+
+    // pathname permite cualquier valor del parámetro dinámico _rsc.
+    cy.wait('@proceso', { timeout: 60000, log: false })
+      .its('response.statusCode').should('eq', 200);
+
+    cy.location('pathname', { timeout: 30000 })
+      .should('eq', `/process/${processId}`);
+
+    cy.getCookie('auth-token-evbasic', { log: false }).then((cookie) => {
+      cy.wrap(Boolean(cookie?.value), { log: false }).should('eq', true);
+    });
+    cy.getCookie('auth-realm', { log: false })
+      .should('have.property', 'value', 'evbasic');
+
+    cy.screenshot('02-acceso-al-proceso');
   });
 
 });
