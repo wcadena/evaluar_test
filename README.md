@@ -1,156 +1,112 @@
 # Evaluar — QA Automation E2E
 
-Suite con **Cypress y JavaScript** para el proceso autorizado
-`572ff080-da01-4a64-9858-897f5a8d1be9` de candidato.evaluar.com.
+Automatización de pruebas end-to-end con **Cypress y JavaScript** para el proceso de evaluación de candidatos de [Evaluar](https://candidato.evaluar.com/).
 
-## Instalación
+El proyecto implementa los **tres escenarios solicitados**: acceso (TC-001), evaluación matricial (TC-002) y evaluación de selección múltiple (TC-003). Las pruebas validan tanto la interacción con la interfaz como las respuestas relevantes de la API y el estado final de las evaluaciones.
 
-Requisitos: Node.js 22.12 o compatible con Cypress 16, npm y Google Chrome
-instalado. Validado en Windows con Node 22.12, Cypress 16.3 y Chrome 157.
-Se necesita acceso a npm y a los dominios de Evaluar.
+## Requisitos
 
-```powershell
-git clone https://github.com/wcadena/evaluar_test
-cd test_evaluar
+- Node.js **22.12** (entorno de referencia).
+- npm y Google Chrome instalados.
+- Conexión a internet y acceso a `candidato.evaluar.com`, `apis.evaluar.com` y al registro de npm.
+
+Entorno en el que se reportó la validación: **Windows, Node.js 22.12, Cypress 16.3 y Chrome 157**.
+
+## Instalación y ejecución rápida
+
+```bash
+git clone https://github.com/wcadena/evaluar_test.git
+cd evaluar_test
 npm ci
 npx cypress verify
 npm test
 ```
 
-`npm test` ejecuta exclusivamente TC-001, TC-002 y TC-003, en ese orden,
-con Chrome headless. No requiere una sesión de otra ejecución ni pasos manuales
-en la plataforma. Cada escenario prepara un candidato ficticio nuevo mediante
-el autorregistro autorizado. La ejecución envía y finaliza sus evaluaciones.
+**`npm test` ejecuta únicamente TC-001, TC-002 y TC-003**, en orden y con Chrome en modo headless. No es necesario ejecutar pruebas previas ni proporcionar credenciales manualmente: cada escenario prepara un candidato ficticio de prueba mediante el flujo de API implementado en el proyecto.
 
-## Escenarios
+> **Importante:** las pruebas interactúan con servicios reales de Evaluar, crean candidatos de prueba y pueden enviar y finalizar evaluaciones. Ejecútelas únicamente en el proceso autorizado para esta prueba técnica.
 
-| Caso | Archivo | Validaciones |
-|---|---|---|
-| TC-001: login | `cypress/e2e/01-login.cy.js` | Cuenta previamente creada; eliminación de cookies y almacenamiento del registro; login por formulario con identificación válida; HTTP 200; token nuevo; cookies y área autenticada. |
-| TC-002: matriz | `cypress/e2e/02-prueba-matricial.cy.js` | Personalidad: 8 matrices, 5 filas y 5 posiciones; una posición diferente por fila; selección visual; payload y HTTP 200; avance y mensaje final real. |
-| TC-003: opción múltiple | `cypress/e2e/03-seleccion-multiple.cy.js` | Teletrabajo: 11 preguntas con tres alternativas de selección única; selección visual; payload y HTTP 200; avance, estado FINISHED y mensaje final real. |
+## Casos de prueba
 
-El login controlado de esta plataforma pide **correo o identificación**, sin
-campo de contraseña. TC-001 crea primero una cuenta de prueba por API y elimina
-su sesión; después inicia sesión desde la interfaz usando su identificación.
-El formulario realiza el login real de la cuenta existente. No se inventan
-credenciales ni se publica la identificación generada en código o fixtures.
+| Caso | Archivo | Cobertura principal |
+| --- | --- | --- |
+| **TC-001 · Acceso** | `cypress/e2e/01-login.cy.js` | Crea una cuenta de prueba, limpia la sesión inicial, inicia sesión desde el formulario con una identificación válida y verifica HTTP 200, nuevo token, cookies y acceso al área autenticada. |
+| **TC-002 · Evaluación matricial** | `cypress/e2e/02-prueba-matricial.cy.js` | Completa **Personalidad**: 8 matrices de 5 filas y 5 posiciones; verifica selecciones, payload, HTTP 200, navegación y mensaje de finalización. |
+| **TC-003 · Selección de opciones** | `cypress/e2e/03-seleccion-multiple.cy.js` | Completa **Teletrabajo**: 11 preguntas con tres alternativas de selección única; verifica selecciones, payload, HTTP 200, navegación, estado `FINISHED` y mensaje final. |
 
-La preparación por API en TC-002 y TC-003 evita repetir el formulario de acceso.
-Las preguntas, selecciones, navegación y finalización se ejecutan en la interfaz.
-Las respuestas siguen una estrategia determinista para probar el funcionamiento,
-sin interpretar alternativas como correctas o buscar mejorar puntuaciones.
+Las respuestas siguen una **estrategia determinista** orientada a comprobar el funcionamiento de la interfaz. No se interpretan como respuestas correctas ni se utilizan para optimizar puntuaciones.
 
-## Ejecución por escenario
+### Ejecución individual
 
-```powershell
+```bash
 npm run test:login
 npm run test:matriz
 npm run test:multiple
 ```
 
-También se pueden ejecutar directamente:
+Para abrir el runner interactivo:
 
-```powershell
-npx cypress run --spec "cypress/e2e/01-login.cy.js" --browser chrome
-npx cypress run --spec "cypress/e2e/02-prueba-matricial.cy.js" --browser chrome
-npx cypress run --spec "cypress/e2e/03-seleccion-multiple.cy.js" --browser chrome
-```
-
-Modo interactivo:
-
-```powershell
+```bash
 npm run cy:open
 ```
 
-Selecciona E2E, Chrome y uno de los tres archivos numerados. No necesitas
-ejecutar otro archivo antes. Los scripts headless eliminan del proceso hijo
-`ELECTRON_RUN_AS_NODE` y `ELECTRON_NO_ATTACH_CONSOLE`, que algunos editores
-inyectan y que impiden iniciar Cypress correctamente.
+Seleccione **E2E**, **Chrome** y el archivo del escenario que desee inspeccionar.
 
-## Configuración y seguridad
+## Cómo funciona la autenticación
 
-`baseUrl`, viewport y tiempos están en `cypress.config.js`. Los escenarios de
-entrega no requieren usuarios, contraseñas ni tokens de configuración; Faker
-genera los datos y el helper utiliza los tokens devueltos por la API.
-No hay variables secretas obligatorias ni archivos locales ocultos que preparar.
+El formulario de acceso controlado solicita **correo electrónico o identificación**, sin contraseña. En TC-001 se crea una cuenta de prueba mediante la API, se descarta la sesión inicial y se comprueba el inicio de sesión real desde la interfaz.
 
-El alias público `expose.sessionUser=cuenta-qa` se usa únicamente en las pruebas
-adicionales de restauración de sesión. Puede cambiarse con
-`--expose sessionUser=otro-alias`; no representa una credencial.
-En Cypress 16, cualquier secreto futuro debe leerse con `cy.env()` y mantenerse
-fuera de Git. `.env*`, `cypress.env.json`, reportes, videos, capturas y artefactos
-de inspección están excluidos mediante `.gitignore`.
+En TC-002 y TC-003, el helper `cypress/support/sesion-evaluar.js` crea la sesión de un candidato de prueba mediante la API y configura la autenticación necesaria para navegar por la aplicación. Las respuestas y la finalización de las evaluaciones se realizan desde la interfaz web.
 
-## Evidencias y resultado esperado
+El proceso utilizado es:
 
-Al terminar `npm test` se esperan **3 passing, 0 failing**, código de salida 0
-y ningún escenario omitido. El runner falla también si quedan pruebas pendientes.
+`572ff080-da01-4a64-9858-897f5a8d1be9`
 
-- `reports/resultado-suite.json`: resumen de la ejecución real sin tokens.
-- `cypress/screenshots/<archivo>/`: capturas TC001, TC002 y TC003.
-- `cypress/videos/<archivo>.mp4`: video real de cada escenario.
-- `entrega/`: paquete local de evidencias para publicar aparte del código.
+No se necesitan contraseñas, tokens estáticos ni archivos secretos para ejecutar los tres escenarios de entrega. Los tokens se obtienen dinámicamente y no deben publicarse.
 
-Para conservar también la salida de terminal en PowerShell:
+## Evidencias y resultados
 
-```powershell
-New-Item -ItemType Directory -Force reports
-npm test 2>&1 | Tee-Object -FilePath reports/ejecucion.log
-```
+La ejecución genera o utiliza las siguientes rutas:
 
-El video de entrega debe mostrar el comando y los resultados reales de los
-tres escenarios. Revisa su contenido y comparte un enlace público que pueda
-abrirse sin iniciar sesión. Los videos de Cypress no graban el terminal;
-cualquier montaje debe identificar sus rótulos y usar la salida real guardada.
-No publiques información de candidatos reales.
+| Ruta | Contenido |
+| --- | --- |
+| `reports/resultado-suite.json` | Resumen de resultados de la suite. |
+| `cypress/screenshots/` | Capturas de los escenarios. |
+| `cypress/videos/` | Grabaciones de ejecución de Cypress. |
+| `entrega/demo-evaluar.mp4` | Video de demostración generado a partir de evidencias reales, cuando se ejecute el script correspondiente. |
 
-Para montar un video breve con las grabaciones y el resumen de la última
-ejecución real:
+**Última verificación reportada por el autor:** 3 pruebas aprobadas, 0 fallidas, 0 omitidas, código de salida 0, duración **146,83 s**; realizada desde una copia limpia con `npm ci` y `npm test`. Este resultado es una referencia de la ejecución reportada, **no una garantía de que futuras ejecuciones tengan idéntico resultado o duración**.
 
-```powershell
+Para generar el video de entrega a partir de las grabaciones y resultados disponibles:
+
+```bash
 npm run video:entrega
 ```
 
-Genera `entrega/demo-evaluar.mp4`: clips reales a velocidad 2x, rótulos del comando
-ejecutado y resumen de resultados. Requiere FFmpeg: en Windows se busca el
-incluido en la caché de Cypress; también puedes indicar su ejecutable mediante
-`FFMPEG_PATH`. El script rechaza resultados distintos de tres escenarios aprobados.
-No vuelve a ejecutar pruebas ni registra candidatos.
+El comando requiere FFmpeg; en Windows el script puede utilizar el ejecutable de la caché de Cypress o el indicado mediante `FFMPEG_PATH`. No vuelve a ejecutar las pruebas ni crea candidatos nuevos.
 
-La verificación de entrega se realizó desde una copia limpia con `npm ci` y
-`npm test`: **3 passing, 0 failing, 0 omitidas**, código de salida 0, en 146.83 s.
-El resumen JSON y el log de esa ejecución acompañan el video local.
+**Video de demostración:** _[Agregar aquí el enlace público al video de entrega]_.
 
-## Pruebas adicionales y límites
+## Organización y notas técnicas
 
-`login.cy.js` conserva las pruebas originales del **autorregistro**;
-`acceso-autenticado.cy.js` conserva las pruebas de reutilización de sesión y de
-acceso por API. No sustituyen TC-001 ni forman parte de `npm test`.
-La prueba adicional de sesión requiere ejecutar primero el autorregistro en
-la misma instancia de Cypress; su respaldo vive en memoria y se pierde al cerrar
-el proceso. Por eso `npx cypress run` sin seleccionar archivos puede ejecutar
-pruebas adicionales que requieren esa preparación.
+- `cypress/support/sesion-evaluar.js`: preparación y comprobación de autenticación.
+- `cypress/support/matriz-evaluar.js`: automatización de matrices.
+- `cypress/support/seleccion-multiple-evaluar.js`: automatización de preguntas de selección (verificar el nombre real del helper antes de publicar).
+- `cypress.config.js`: URL base, viewport y tiempos de espera.
+- `package-lock.json`: dependencias fijadas para una instalación reproducible.
 
-Los tres escenarios de entrega usan candidatos nuevos y no tienen esa
-dependencia. Los selectores y textos corresponden al DOM real inspeccionado.
-La ruta inglesa muestra `Evaluations`; también se admite `Evaluaciones`.
-Si la plataforma cambia sus controles o no habilita el envío, la prueba falla y
-debe revisarse la evidencia; no se omiten aserciones ni se fuerzan envíos.
+Existen pruebas complementarias de autorregistro y restauración de sesión (`login.cy.js` y `acceso-autenticado.cy.js`) que **no forman parte de `npm test`**. Ejecutar `npx cypress run` sin seleccionar escenarios puede incluirlas; algunas requieren una preparación previa de sesión en la misma instancia de Cypress.
 
-Hay peticiones secundarias de reportes/analítica que pueden fallar fuera del
-flujo probado. No se desactivan validaciones, CAPTCHA, MFA ni controles de seguridad.
-No hay endpoints, credenciales ni resultados de evaluación simulados.
+Las aserciones dependen del comportamiento real de la plataforma. Cambios en la interfaz, disponibilidad de evaluaciones o restricciones del proceso pueden requerir actualizar los selectores o la sincronización de red. No se simulan respuestas de evaluación ni se desactivan controles de seguridad.
 
-La instalación actual reporta una advertencia de `npm audit` en Faker 9.9,
-relacionada con `helpers.fake` (GHSA-qxc2-j82w-r537). La suite no utiliza esa
-función. No se aplicó `npm audit fix --force`, que cambiaría la versión mayor
-y los requisitos de Node sin validación. El lockfile mantiene la instalación
-con la que se verificó la entrega.
+### Seguridad y dependencias
 
-## Entrega
+El repositorio excluye de Git archivos locales de entorno, tokens, capturas, videos y reportes mediante `.gitignore`. Antes de publicar evidencias, compruebe que no contengan información sensible.
 
-Publica el código, configuración, lockfile y este README en GitHub. Comparte
-aparte el video y verifica ambos enlaces en una ventana sin sesión. El correo
-de respuesta debe indicar nombre completo, Cypress + JavaScript, enlace del
-repositorio y enlace del video. No incluyas tokens ni archivos de sesión.
+En la instalación de referencia se reportó una advertencia de `npm audit` asociada a Faker 9.9 (`GHSA-qxc2-j82w-r537`, función `helpers.fake`, no utilizada por esta suite). Se conservó el lockfile validado y no se aplicó una actualización mayor forzada sin pruebas de regresión.
+
+## Repositorio
+
+**Código fuente:** https://github.com/wcadena/evaluar_test
+
+**Tecnologías:** Cypress · JavaScript · Faker · Chrome
